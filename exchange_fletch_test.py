@@ -42,7 +42,7 @@ def custom_filter(symbol):
 
 symbols = list(filter(custom_filter, symbols))
 
-symbols = ['BTC/EUR']
+# symbols = ['BTC/EUR']
 
 df_symbol = pd.DataFrame(symbols, columns =['Symbols'])
 
