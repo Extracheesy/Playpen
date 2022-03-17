@@ -2,6 +2,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.options.display.float_format = '{:.6f}'.format
 import ccxt
+import config
 import matplotlib.pyplot as plt
 import ta
 import numpy as np
@@ -12,7 +13,7 @@ from statsmodels.tsa.stattools import coint
 
 from tradingview_ta import TA_Handler, Interval, Exchange
 
-def get_ohlcv(symbol, tf):
+def get_ohlcv(symbol, exchange, tf):
     df = pd.DataFrame(exchange.fetch_ohlcv(symbol, tf, limit=5000))
     df = df.rename(columns={0: 'timestamp', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'})
     df = df.set_index(df['timestamp'])
@@ -22,7 +23,7 @@ def get_ohlcv(symbol, tf):
 
 def custom_filter(symbol):
     if(
-        symbol[-4:] == "/USD"
+        symbol[-4:] == config.PAIR_USD
         and "BULL" not in symbol
         and "HALF" not in symbol
         and "EDGE" not in symbol
@@ -71,25 +72,48 @@ def get_tradingview_recommendation(df, interval):
 
     return df
 
+def get_exchange():
+    if config.EXCHANGE == config.EXCHANGE_FTX:
+        exchange = ccxt.ftx()
+    else:
+        exchange = ccxt.binance()
+
+    return exchange
+
+def filter_df_level(df, lst_filter):
+    lst_to_clear = config.RECOMMENDATION_ALL
+    for item in lst_filter:
+        lst_to_clear.remove(item)
+    lst_to_clear.append("")
+
+    lst_columns = df.columns.tolist()
+    for columns_name in df.columns.tolist():
+        if columns_name.startswith("RECOMMENDATION_") == False:
+            lst_columns.remove(columns_name)
+
+    for value in lst_to_clear:
+        for column in lst_columns:
+            df.drop(df.index[df[column] == value], inplace=True)
+
+    return df
+
 """
     CSL module: Compute Symbol List
 """
 if __name__ == '__main__':
-    exchange = ccxt.ftx()
-    # exchange = ccxt.binance()
+
+    exchange = get_exchange()
 
     markets = exchange.load_markets()
+
     symbols = exchange.symbols
     df_list = {}
 
     symbols = list(filter(custom_filter, symbols))
 
-
-
     list_crypto_symbols = []
     for symbol in symbols:
-        ohlcv = get_ohlcv(symbol, "1h")
-        #ohlcv = get_ohlcv(symbol, "1d")
+        ohlcv = get_ohlcv(symbol, exchange, config.TV_INTERVAL_1_DAY)
         if ohlcv["volume"].mean() > 10000:
             list_crypto_symbols.append(symbol)
             #df_list[symbol] = ohlcv
@@ -97,14 +121,18 @@ if __name__ == '__main__':
 
     df_symbol = pd.DataFrame(list_crypto_symbols, columns =['symbol'])
     df_symbol['symbolTV'] = df_symbol['symbol'].str.replace("/", "")
+    df_symbol['exchange'] = config.EXCHANGE
+    df_symbol['screener'] = config.SCREENER_TYPE
 
-    df_symbol['exchange'] = "ftx"
-    df_symbol['screener'] = "crypto"
+    for interval in config.INTERVAL:
+        df_symbol = get_tradingview_recommendation(df_symbol, interval)
 
-    df_symbol = get_tradingview_recommendation(df_symbol, Interval.INTERVAL_2_HOURS)
-    df_symbol = get_tradingview_recommendation(df_symbol, Interval.INTERVAL_4_HOURS)
-    df_symbol = get_tradingview_recommendation(df_symbol, Interval.INTERVAL_1_DAY)
+    df_symbol.to_csv('screener_all.csv')
 
-    df_symbol.to_csv('screener.csv')
+    df_symbol = filter_df_level(df_symbol, config.FILTER)
 
-    print("done!")
+    df_symbol.to_csv('screener_filtered.csv')
+
+    list_crypto_symbols = df_symbol['symbol'].to_list()
+
+    print(list_crypto_symbols)
