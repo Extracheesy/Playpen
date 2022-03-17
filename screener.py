@@ -139,4 +139,5 @@ if __name__ == '__main__':
 
     list_crypto_symbols = df_symbol['symbol'].to_list()
 
+    print("nb symbols:", len(list_crypto_symbols))
     print(list_crypto_symbols)
