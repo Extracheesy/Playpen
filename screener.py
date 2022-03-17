@@ -46,6 +46,12 @@ def set_tradingview_data(df, symbol, data_handler, summary):
 
     return df
 
+def set_tradingview_no_data(df, symbol, interval):
+    recommendation = "RECOMMENDATION_" + interval
+    df.loc[symbol, recommendation] = ""
+
+    return df
+
 def get_tradingview_recommendation(df, interval):
     list_symbol = df['symbolTV'].tolist()
     df = df.set_index('symbolTV', drop=False)
@@ -64,9 +70,8 @@ def get_tradingview_recommendation(df, interval):
         try:
             tradingview_summary = data_handler.get_analysis().summary
             df = set_tradingview_data(df, symbol, data_handler, tradingview_summary)
-            #print(tradingview_summary)
         except:
-            print('no data')
+            df = set_tradingview_no_data(df, symbol, interval)
 
     df.reset_index(inplace=True, drop=True)
 
@@ -117,7 +122,6 @@ if __name__ == '__main__':
         if ohlcv["volume"].mean() > 10000:
             list_crypto_symbols.append(symbol)
             #df_list[symbol] = ohlcv
-
 
     df_symbol = pd.DataFrame(list_crypto_symbols, columns =['symbol'])
     df_symbol['symbolTV'] = df_symbol['symbol'].str.replace("/", "")
