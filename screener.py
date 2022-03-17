@@ -103,27 +103,7 @@ def filter_df_level(df, lst_filter):
     df.reset_index(inplace=True, drop=True)
     return df
 
-"""
-    CSL module: Compute Symbol List
-"""
-if __name__ == '__main__':
-
-    exchange = get_exchange()
-
-    markets = exchange.load_markets()
-
-    symbols = exchange.symbols
-    df_list = {}
-
-    symbols = list(filter(custom_filter, symbols))
-
-    list_crypto_symbols = []
-    for symbol in symbols:
-        ohlcv = get_ohlcv(symbol, exchange, config.TV_INTERVAL_1_DAY)
-        if ohlcv["volume"].mean() > 10000:
-            list_crypto_symbols.append(symbol)
-            #df_list[symbol] = ohlcv
-
+def get_tradingview_recommendation_list(list_crypto_symbols):
     df_symbol = pd.DataFrame(list_crypto_symbols, columns =['symbol'])
     df_symbol['symbolTV'] = df_symbol['symbol'].str.replace("/", "")
     df_symbol['exchange'] = config.EXCHANGE
@@ -140,5 +120,102 @@ if __name__ == '__main__':
 
     list_crypto_symbols = df_symbol['symbol'].to_list()
 
+    print("tradingview recommendation: ", config.FILTER)
     print("nb symbols:", len(list_crypto_symbols))
     print(list_crypto_symbols)
+
+def get_top_gainer(df):
+    df_top_gainer_24h = df.copy()
+    df_top_gainer_24h.sort_values(by=['change24h'], ascending=False, inplace=True)
+    df_top_gainer_24h = df_top_gainer_24h.set_index('ranking24h', drop=False)
+    df_top_gainer_24h = df_top_gainer_24h[:config.PRICE_TOP_GAINER]
+
+    df_top_gainer_1h = df.copy()
+    df_top_gainer_1h.sort_values(by=['change1h'], ascending=False, inplace=True)
+    df_top_gainer_1h = df_top_gainer_1h.set_index('ranking1h', drop=False)
+    df_top_gainer_1h = df_top_gainer_1h[:config.PRICE_TOP_GAINER]
+
+    frame = [df_top_gainer_24h, df_top_gainer_1h]
+    df = pd.concat(frame)
+    df.sort_values(by=['symbol'], ascending=False, inplace=True)
+    df = df[df['symbol'].duplicated() == True]
+    df.sort_values(by=['change1h'], ascending=False, inplace=True)
+    df.reset_index(inplace=True, drop=True)
+
+    return df_top_gainer_24h, df_top_gainer_1h, df
+
+
+def get_price_chage(df, markets):
+    df = df.set_index('symbol', drop=False)
+    lst_symbol = df['symbol'].to_list()
+
+    for symbol in lst_symbol:
+        df.loc[symbol, 'change24h'] = float(markets[symbol]['info']['change24h']) * 100
+        df.loc[symbol, 'change1h'] = float(markets[symbol]['info']['change1h']) * 100
+
+    df.reset_index(inplace=True, drop=True)
+
+    df.sort_values(by=['change24h'], ascending=False, inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    df['ranking24h'] = df.index
+
+    df.sort_values(by=['change1h'], ascending=False, inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    df['ranking1h'] = df.index
+
+    df.reset_index(inplace=True, drop=True)
+
+    df.to_csv('screener_all_price.csv')
+
+    df_top_gainer24h, df_top_gainer1h, df_top_gainer_crossover = get_top_gainer(df)
+
+    df_top_gainer24h.to_csv('screener_top_gainer24h.csv')
+    df_top_gainer1h.to_csv('screener_top_gainer1h.csv')
+    df_top_gainer_crossover.to_csv('screener_top_gainer_crossover.csv')
+
+    return df_top_gainer_crossover
+
+
+def get_market_price_changes(list_crypto_symbols, markets):
+    df_symbol = pd.DataFrame(list_crypto_symbols, columns=['symbol'])
+    df_symbol = get_price_chage(df_symbol, markets)
+
+    list_top_gainer = df_symbol['symbol'].to_list()
+
+    print("price top gainers: ")
+    print("nb symbols:", len(list_top_gainer))
+    print(list_top_gainer)
+
+
+
+"""
+    CSL module: Compute Symbol List
+"""
+if __name__ == '__main__':
+
+    exchange = get_exchange()
+
+    markets = exchange.load_markets()
+
+    symbols = exchange.symbols
+    df_list = {}
+
+    symbols = list(filter(custom_filter, symbols))
+
+    # symbols = symbols[:20]
+
+    list_crypto_symbols = []
+    for symbol in symbols:
+        ohlcv = get_ohlcv(symbol, exchange, config.TV_INTERVAL_1_DAY)
+        if ohlcv["volume"].mean() > 10000:
+            list_crypto_symbols.append(symbol)
+
+    get_market_price_changes(list_crypto_symbols, markets)
+
+    get_tradingview_recommendation_list(list_crypto_symbols)
+
+
+
+
+
+
