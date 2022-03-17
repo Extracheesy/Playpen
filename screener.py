@@ -100,6 +100,7 @@ def filter_df_level(df, lst_filter):
         for column in lst_columns:
             df.drop(df.index[df[column] == value], inplace=True)
 
+    df.reset_index(inplace=True)
     return df
 
 """
