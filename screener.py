@@ -209,18 +209,14 @@ def filter_symbol_by_volume(symbols):
 if __name__ == '__main__':
 
     exchange = get_exchange()
-
     markets = exchange.load_markets()
-
     symbols = exchange.symbols
-    df_list = {}
 
     print("list symbols available: ", len(symbols))
     symbols_total_size = len(symbols)
+
     symbols = list(filter(custom_filter, symbols))
     print("symbol filtered: ", symbols_total_size - len(symbols))
-
-    # symbols = symbols[:20]
 
     list_crypto_symbols = filter_symbol_by_volume(symbols)
 
