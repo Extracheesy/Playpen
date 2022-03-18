@@ -186,7 +186,22 @@ def get_market_price_changes(list_crypto_symbols, markets):
     print("nb symbols:", len(list_top_gainer))
     print(list_top_gainer)
 
+def filter_symbol_by_volume(symbols):
+    list_crypto_symbols = []
+    if config.VOLUME_FILTERED_BY_INFO:
+        for symbol in symbols:
+            info = markets[symbol]['info']
+            volume_info = float(info['quoteVolume24h'])
+            if volume_info > config.VOLUME_THRESHOLD:
+                list_crypto_symbols.append(symbol)
+    else:
+        for symbol in symbols:
+            ohlcv = get_ohlcv(symbol, exchange, config.TV_INTERVAL_1_DAY)
+            volume_mean = float(ohlcv["volume"].mean())
+            if ohlcv["volume"].mean() > config.VOLUME_THRESHOLD:
+                list_crypto_symbols.append(symbol)
 
+    return list_crypto_symbols
 
 """
     CSL module: Compute Symbol List
@@ -200,15 +215,17 @@ if __name__ == '__main__':
     symbols = exchange.symbols
     df_list = {}
 
+    print("list symbols available: ", len(symbols))
+    symbols_total_size = len(symbols)
     symbols = list(filter(custom_filter, symbols))
+    print("symbol filtered: ", symbols_total_size - len(symbols))
 
     # symbols = symbols[:20]
 
-    list_crypto_symbols = []
-    for symbol in symbols:
-        ohlcv = get_ohlcv(symbol, exchange, config.TV_INTERVAL_1_DAY)
-        if ohlcv["volume"].mean() > 10000:
-            list_crypto_symbols.append(symbol)
+    list_crypto_symbols = filter_symbol_by_volume(symbols)
+
+    print("low volume symbol dropped: ", len(symbols) - len(list_crypto_symbols))
+    print("symbol remaining: ", len(list_crypto_symbols))
 
     get_market_price_changes(list_crypto_symbols, markets)
 
