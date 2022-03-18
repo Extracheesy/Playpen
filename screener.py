@@ -124,6 +124,8 @@ def get_tradingview_recommendation_list(list_crypto_symbols):
     print("nb symbols:", len(list_crypto_symbols))
     print(list_crypto_symbols)
 
+    return list_crypto_symbols
+
 def get_top_gainer(df):
     df_top_gainer_24h = df.copy()
     df_top_gainer_24h.sort_values(by=['change24h'], ascending=False, inplace=True)
@@ -186,6 +188,8 @@ def get_market_price_changes(list_crypto_symbols, markets):
     print("nb symbols:", len(list_top_gainer))
     print(list_top_gainer)
 
+    return list_top_gainer
+
 def filter_symbol_by_volume(symbols):
     list_crypto_symbols = []
     if config.VOLUME_FILTERED_BY_INFO:
@@ -202,6 +206,13 @@ def filter_symbol_by_volume(symbols):
                 list_crypto_symbols.append(symbol)
 
     return list_crypto_symbols
+
+def get_price_and_tradingview_common(lst1, lst2):
+    lst = []
+    for item in lst1:
+        if item in lst2:
+            lst.append(item)
+    return lst
 
 """
     CSL module: Compute Symbol List
@@ -223,9 +234,13 @@ if __name__ == '__main__':
     print("low volume symbol dropped: ", len(symbols) - len(list_crypto_symbols))
     print("symbol remaining: ", len(list_crypto_symbols))
 
-    get_market_price_changes(list_crypto_symbols, markets)
+    list_price = get_market_price_changes(list_crypto_symbols, markets)
 
-    get_tradingview_recommendation_list(list_crypto_symbols)
+    list_tradingview = get_tradingview_recommendation_list(list_crypto_symbols)
+
+    list_reinforced = get_price_and_tradingview_common(list_price, list_tradingview)
+    print("common symbol: ", len(list_reinforced))
+    print(list_reinforced)
 
 
 
