@@ -3,6 +3,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 pd.options.display.float_format = '{:.6f}'.format
 import ccxt
 import config
+from datetime import datetime
 import matplotlib.pyplot as plt
 import ta
 import numpy as np
@@ -218,6 +219,9 @@ def get_price_and_tradingview_common(lst1, lst2):
     CSL module: Compute Symbol List
 """
 if __name__ == '__main__':
+    from datetime import datetime
+
+    start_time = datetime.now()
 
     exchange = get_exchange()
     markets = exchange.load_markets()
@@ -242,6 +246,9 @@ if __name__ == '__main__':
     print("common symbol: ", len(list_reinforced))
     print(list_reinforced)
 
+    end_time = datetime.now()
+    duration_time = end_time - start_time
+    print('duration: ', duration_time)
 
 
 
