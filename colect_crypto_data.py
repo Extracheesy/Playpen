@@ -11,6 +11,10 @@ import json
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from statsmodels.tsa.stattools import coint
+import datetime  # For datetime objects
+import os
+import os.path  # To manage paths
+import sys  # To find out the script name (in argv[0])
 
 from tradingview_ta import TA_Handler, Interval, Exchange
 
@@ -218,9 +222,11 @@ def get_price_and_tradingview_common(lst1, lst2):
 
 def collect_ohlcv_crypto(exchange, symbols, interval):
     for symbol in symbols:
-        ohlcv = get_ohlcv(exchange, symbol, config.TV_INTERVAL_1_HOUR)
+        ohlcv = get_ohlcv(exchange, symbol, interval)
         fileneame = './CRYPTO_DATAS/' + symbol.replace("/", "-") +'.csv'
         ohlcv.to_csv(fileneame)
+        print(symbol, ' -> ', fileneame)
+
 
 
 def set_tradingview_recommendation(list_crypto_symbols, interval):
@@ -250,8 +256,8 @@ if __name__ == '__main__':
     print("symbol remaining: ", len(list_crypto_symbols))
 
 
-    collect_ohlcv_crypto(exchange, list_crypto_symbols, "1h")
-    set_tradingview_recommendation(list_crypto_symbols, "1h")
+    collect_ohlcv_crypto(exchange, list_crypto_symbols, config.TV_INTERVAL_1_DAY)
+    set_tradingview_recommendation(list_crypto_symbols, config.TV_INTERVAL_1_DAY)
 
     list_price = get_market_price_changes(list_crypto_symbols, markets)
 
