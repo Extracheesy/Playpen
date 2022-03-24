@@ -78,11 +78,9 @@ def get_tradingview_recommendation(df, interval):
             tradingview_summary = data_handler.get_analysis().summary
             df = set_tradingview_data(df, symbol, data_handler, tradingview_summary)
         except:
-            print('no data: ', symnol)
             df = set_tradingview_no_data(df, symbol, interval)
 
     df.reset_index(inplace=True, drop=True)
-
     return df
 
 def get_exchange():
@@ -94,12 +92,10 @@ def get_exchange():
     return exchange
 
 def filter_df_level(df, lst_filter, full_recommendation_list):
-    print("full: ",full_recommendation_list)
     lst_to_clear = full_recommendation_list
     for item in lst_filter:
         lst_to_clear.remove(item)
     lst_to_clear.append("")
-    print("clear: ",lst_to_clear)
 
     lst_columns = df.columns.tolist()
     for columns_name in df.columns.tolist():
@@ -120,17 +116,13 @@ def get_tradingview_recommendation_list(list_crypto_symbols):
     df_symbol['screener'] = config.SCREENER_TYPE
 
     for interval in config.INTERVAL:
-        print(interval)
         df_symbol = get_tradingview_recommendation(df_symbol, interval)
-        print(interval," out")
-
 
     if config.MULTITHREADING == False:
         df_symbol.to_csv('screener_all.csv')
 
     RECOMMENDATION_ALL = ["STRONG_BUY", "BUY", "NEUTRAL", "STRONG_SELL", "SELL"]
     df_symbol = filter_df_level(df_symbol, config.FILTER, RECOMMENDATION_ALL)
-    print("############################################################################")
 
     if config.MULTITHREADING == False:
         df_symbol.to_csv('screener_filtered.csv')
